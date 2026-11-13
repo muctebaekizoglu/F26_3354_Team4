@@ -1,0 +1,17 @@
+{
+  "name": "loto-backend",
+  "version": "1.0.0",
+  "description": "LOTO Management System - Backend API (UC-2 Apply Lock, UC-3 Release Lock)",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "jest --verbose"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
+  }
+}
