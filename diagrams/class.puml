@@ -1,0 +1,152 @@
+@startuml
+!include common.iuml
+skinparam classAttributeIconSize 0
+hide circle
+title Class Diagram - LOTO Management System
+
+enum Role {
+  WORKER
+  SUPERVISOR
+  ADMIN
+}
+enum EquipmentStatus {
+  LOCKED
+  UNLOCKED
+  RETIRED
+}
+abstract class User {
+  - userId : int
+  - username : String
+  - passwordHash : String
+  - role : Role
+  - isActive : boolean
+  - failedLoginCount : int
+  - lockedUntil : DateTime
+  + login(username, password) : Session
+  + logout() : void
+}
+class Worker {
+  - certifiedUntil : Date
+  + applyLock(equipmentId) : Lock
+  + releaseLock(lockId) : void
+}
+class Supervisor {
+  - shift : String
+  + overrideRelease(lockId, reason) : void
+  + generateReport(filters) : ComplianceReport
+}
+class Admin {
+  - permissions : List<String>
+  + manageUser(userData) : User
+  + manageEquipment(equipmentData) : Equipment
+}
+class Equipment {
+  - equipmentId : int
+  - name : String
+  - location : String
+  - status : EquipmentStatus
+  + isLocked() : boolean
+  + getActiveLocks() : List<Lock>
+  + updateStatus(status) : void
+}
+class Lock {
+  - lockId : int
+  - appliedAt : DateTime
+  - releasedAt : DateTime
+  - isActive : boolean
+  - overrideReason : String
+  + apply() : void
+  + release() : void
+  + override(reason) : void
+}
+class AuditEntry {
+  - entryId : int
+  - timestamp : DateTime
+  - actorId : int
+  - action : String
+  - equipmentId : int
+  - details : String
+  - prevHash : String
+  + record() : void
+}
+class ComplianceReport {
+  - reportId : int
+  - startDate : Date
+  - endDate : Date
+  - filters : Map
+  - generatedAt : DateTime
+  + filter(criteria) : List<AuditEntry>
+  + exportCsv() : File
+}
+class Notification {
+  - notificationId : int
+  - message : String
+  - createdAt : DateTime
+  - isRead : boolean
+  + markRead() : void
+}
+class AuthService {
+  - maxFailedAttempts : int = 5
+  - lockoutMinutes : int = 15
+  - sessionTimeoutMin : int = 30
+  + authenticate(username, password) : Session
+  + authorize(user, equipment, action) : boolean
+}
+class LockoutService {
+  - store : DataStore
+  + applyLock(workerId, equipmentId) : Lock
+  + releaseLock(workerId, lockId) : void
+  + overrideRelease(supervisorId, lockId, reason) : void
+  + getEquipmentStatuses() : List<Equipment>
+}
+class AuditService {
+  - lastHash : String
+  + log(actorId, action, equipmentId, details) : AuditEntry
+  + query(filters) : List<AuditEntry>
+}
+class ReportService {
+  - maxRows : int = 10000
+  + generate(filters) : ComplianceReport
+  + exportCsv(report) : File
+}
+class NotificationService {
+  - pollIntervalSec : int = 5
+  + notifyStatusChange(equipment) : void
+  + getUnread(userId) : List<Notification>
+}
+class AdminService {
+  - tempPasswordLength : int = 12
+  + createUser(data) : User
+  + updateUser(userId, data) : User
+  + deactivateUser(userId) : void
+  + addEquipment(data) : Equipment
+  + updateEquipment(equipmentId, data) : Equipment
+  + retireEquipment(equipmentId) : void
+}
+
+User <|-- Worker
+User <|-- Admin
+Worker <|-- Supervisor
+User "0..*" --> "1" Role
+Equipment "0..*" --> "1" EquipmentStatus
+
+Worker "1" -- "0..*" Lock : applies >
+Equipment "1" -- "0..*" Lock : secured by >
+Supervisor "0..1" -- "0..*" Lock : overrides >
+Worker "0..*" -- "0..*" Equipment : authorized for >
+User "1" -- "0..*" AuditEntry : performs >
+Lock "0..1" -- "0..*" AuditEntry : generates >
+ComplianceReport "0..*" o-- "0..*" AuditEntry : contains >
+User "1" *-- "0..*" Notification : receives >
+Equipment "1" -- "0..*" Notification : about <
+
+LockoutService ..> AuthService : uses
+LockoutService ..> AuditService : uses
+LockoutService ..> NotificationService : uses
+LockoutService ..> Lock : creates
+ReportService ..> AuditService : uses
+ReportService ..> ComplianceReport : creates
+AdminService ..> AuthService : uses
+AdminService ..> AuditService : uses
+AuthService ..> User : validates
+@enduml

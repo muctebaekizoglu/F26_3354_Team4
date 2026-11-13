@@ -1,0 +1,37 @@
+@startuml
+!include common.iuml
+autonumber
+title UC-1 Log In
+actor User
+boundary "Login Page" as UI
+control AuthService
+control AuditService
+database Database as DB
+User -> UI : enter username + password
+activate UI
+UI -> AuthService : authenticate(username, password)
+activate AuthService
+AuthService -> DB : find user by username
+DB --> AuthService : user record
+alt account locked (now < lockedUntil)
+  AuthService --> UI : error "Account locked"
+  UI --> User : show lock message
+else credentials valid
+  AuthService -> DB : reset failedLoginCount
+  AuthService -> AuditService : log(userId, LOGIN_SUCCESS)
+  AuditService -> DB : insert AuditEntry
+  AuthService --> UI : Session
+  UI --> User : redirect to dashboard
+else credentials invalid
+  AuthService -> DB : failedLoginCount + 1
+  opt failedLoginCount >= 5  [extend: Lock Account]
+    AuthService -> DB : lockedUntil = now + 15 min
+  end
+  AuthService -> AuditService : log(userId, LOGIN_FAILED)
+  AuditService -> DB : insert AuditEntry
+  AuthService --> UI : error
+  UI --> User : "Invalid username or password"
+end
+deactivate AuthService
+deactivate UI
+@enduml

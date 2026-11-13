@@ -1,0 +1,56 @@
+@startuml
+!include common.iuml
+autonumber
+title UC-3 Release Lock (with Supervisor Override extension)
+actor Worker
+actor Supervisor
+boundary "Lock Screen" as UI
+control LockoutService
+control AuthService
+control AuditService
+control NotificationService
+database Database as DB
+alt normal release
+  Worker -> UI : tap "Unlock" on own lock
+activate UI
+  UI -> LockoutService : releaseLock(workerId, lockId)
+activate LockoutService
+  LockoutService -> AuthService : authorize(worker, equipment, RELEASE)
+  AuthService --> LockoutService : allowed?
+  LockoutService -> DB : get Lock(lockId)
+  DB --> LockoutService : lock
+  alt lock.workerId != workerId or not authorized
+    LockoutService -> AuditService : log(workerId, RELEASE_DENIED)
+    AuditService -> DB : insert AuditEntry
+    LockoutService --> UI : 403 denied
+    UI --> Worker : "Only the worker who applied this lock can remove it"
+  else owner of lock
+    LockoutService -> DB : set lock.isActive = false, releasedAt = now
+    LockoutService -> AuditService : log(workerId, LOCK_RELEASED)
+    AuditService -> DB : insert AuditEntry
+  end
+else supervisor override  [extend: Supervisor Override Release]
+  Supervisor -> UI : select lock, enter reason, tap "Override"
+  UI -> LockoutService : overrideRelease(supervisorId, lockId, reason)
+  LockoutService -> AuthService : authorize(supervisor, equipment, OVERRIDE)
+  AuthService --> LockoutService : allowed?
+  alt reason empty
+    LockoutService --> UI : error "Reason required"
+  else reason given
+    LockoutService -> DB : set lock.isActive = false, overrideReason = reason
+    LockoutService -> AuditService : log(supervisorId, LOCK_OVERRIDDEN, reason)
+    AuditService -> DB : insert AuditEntry
+  end
+end
+opt a lock was released
+  LockoutService -> DB : count active locks on equipment
+  DB --> LockoutService : n
+  opt n == 0
+    LockoutService -> DB : set Equipment.status = UNLOCKED
+  end
+  LockoutService -> NotificationService : notifyStatusChange(equipment)
+  LockoutService --> UI : success
+end
+deactivate LockoutService
+deactivate UI
+@enduml

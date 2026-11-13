@@ -1,0 +1,5 @@
+skinparam defaultFontName Times New Roman
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam monochrome true
+skinparam dpi 150

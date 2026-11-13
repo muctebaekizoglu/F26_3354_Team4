@@ -1,0 +1,22 @@
+@startuml
+!include common.iuml
+left to right direction
+title Use Case Diagram D4 - Administration
+actor Admin
+rectangle "LOTO Management System" {
+  usecase "UC-6 Manage Users\n& Roles" as UC6
+  usecase "UC-7 Manage\nEquipment" as UC7
+  usecase "Verify Authorization" as VA
+  usecase "Record Audit Entry" as RA
+  usecase "Deactivate User" as DU
+  usecase "Retire Equipment" as RE
+}
+Admin -- UC6
+Admin -- UC7
+UC6 ..> VA : <<include>>
+UC7 ..> VA : <<include>>
+UC6 ..> RA : <<include>>
+UC7 ..> RA : <<include>>
+DU ..> UC6 : <<extend>>
+RE ..> UC7 : <<extend>>
+@enduml

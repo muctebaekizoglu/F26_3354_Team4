@@ -1,0 +1,23 @@
+@startuml
+!include common.iuml
+left to right direction
+title Use Case Diagram D2 - Lockout Workflow
+actor Worker
+actor Supervisor
+Supervisor -|> Worker
+rectangle "LOTO Management System" {
+  usecase "UC-2 Apply Lock" as UC2
+  usecase "UC-3 Release Lock" as UC3
+  usecase "Verify Authorization" as VA
+  usecase "Record Audit Entry" as RA
+  usecase "Supervisor Override\nRelease" as OV
+}
+Worker -- UC2
+Worker -- UC3
+Supervisor -- OV
+UC2 ..> VA : <<include>>
+UC2 ..> RA : <<include>>
+UC3 ..> VA : <<include>>
+UC3 ..> RA : <<include>>
+OV ..> UC3 : <<extend>>
+@enduml

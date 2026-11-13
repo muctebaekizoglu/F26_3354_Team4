@@ -1,0 +1,32 @@
+@startuml
+!include common.iuml
+autonumber
+title UC-5 Generate Compliance Report
+actor Supervisor
+boundary "Compliance Screen" as UI
+control ReportService
+control AuthService
+control AuditService
+database Database as DB
+Supervisor -> UI : choose date range, equipment, worker, action
+activate UI
+UI -> ReportService : generate(filters)
+activate ReportService
+ReportService -> AuthService : authorize(supervisor, null, VIEW_REPORT)
+AuthService --> ReportService : allowed
+ReportService -> AuditService : query(filters)  [include: Filter Audit History]
+AuditService -> DB : select audit entries matching filters
+DB --> AuditService : entries
+AuditService --> ReportService : List<AuditEntry>
+ReportService --> UI : ComplianceReport
+UI --> Supervisor : show filtered history
+opt Supervisor clicks "Export CSV"  [extend: Export Report]
+  UI -> ReportService : exportCsv(report)
+  ReportService -> AuditService : log(supervisorId, REPORT_EXPORTED)
+  AuditService -> DB : insert AuditEntry
+  ReportService --> UI : CSV file
+  UI --> Supervisor : download file
+end
+deactivate ReportService
+deactivate UI
+@enduml
