@@ -1,0 +1,36 @@
+@startuml
+!include common.iuml
+autonumber
+title UC-7 Manage Equipment
+actor Admin
+boundary "Equipment Admin Screen" as UI
+control AdminService
+control AuthService
+control AuditService
+database Database as DB
+Admin -> UI : enter equipment name + location
+activate UI
+UI -> AdminService : addEquipment(data)
+activate AdminService
+AdminService -> AuthService : authorize(admin, null, MANAGE_EQUIPMENT)
+AuthService --> AdminService : allowed
+AdminService -> DB : insert Equipment (status = UNLOCKED)
+AdminService -> AuditService : log(adminId, EQUIPMENT_ADDED)
+AuditService -> DB : insert AuditEntry
+AdminService --> UI : Equipment
+opt Admin retires equipment  [extend: Retire Equipment]
+  UI -> AdminService : retireEquipment(equipmentId)
+  AdminService -> DB : count active locks
+  DB --> AdminService : n
+  alt n > 0
+    AdminService --> UI : error "Cannot retire locked equipment"
+  else n == 0
+    AdminService -> DB : set status = RETIRED
+    AdminService -> AuditService : log(adminId, EQUIPMENT_RETIRED)
+    AdminService --> UI : success
+  end
+end
+UI --> Admin : updated equipment list
+deactivate AdminService
+deactivate UI
+@enduml

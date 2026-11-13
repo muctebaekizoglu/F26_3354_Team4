@@ -1,0 +1,38 @@
+@startuml
+!include common.iuml
+autonumber
+title UC-6 Manage Users & Roles
+actor Admin
+boundary "User Admin Screen" as UI
+control AdminService
+control AuthService
+control AuditService
+database Database as DB
+Admin -> UI : fill user form (name, username, role)
+activate UI
+UI -> AdminService : createUser(data)
+activate AdminService
+AdminService -> AuthService : authorize(admin, null, MANAGE_USERS)
+AuthService --> AdminService : allowed?
+alt not admin
+  AdminService --> UI : 403 denied
+else allowed
+  alt username already exists
+    AdminService --> UI : error "Username taken"
+  else new username
+    AdminService -> DB : insert User (hashed temp password, role)
+    AdminService -> AuditService : log(adminId, USER_CREATED)
+    AuditService -> DB : insert AuditEntry
+    AdminService --> UI : User
+  end
+end
+opt Admin deactivates a user  [extend: Deactivate User]
+  UI -> AdminService : deactivateUser(userId)
+  AdminService -> DB : set isActive = false
+  AdminService -> AuditService : log(adminId, USER_DEACTIVATED)
+  AdminService --> UI : success
+end
+UI --> Admin : updated user list
+deactivate AdminService
+deactivate UI
+@enduml

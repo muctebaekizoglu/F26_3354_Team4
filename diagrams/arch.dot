@@ -1,0 +1,18 @@
+digraph G {
+  rankdir=TB; newrank=true; fontname="Times-Roman"; dpi=150; nodesep=0.25; ranksep=0.6;
+  node [shape=box, fontname="Times-Roman", fontsize=12, style=filled, fillcolor="#f4f4f4"];
+  edge [fontname="Times-Roman", fontsize=11];
+  labelloc=t; label="Layered Architecture - LOTO Management System"; fontsize=16;
+  subgraph cluster_p { label="Presentation Layer (Web UI in browser)"; fontsize=13; style=rounded;
+    p1[label="Login Page"]; p2[label="Status Dashboard"]; p3[label="Lock / Release Screens"]; p4[label="Compliance Screen"]; p5[label="Admin Screens"]; }
+  subgraph cluster_a { label="Application Layer (REST API + business rules)"; fontsize=13; style=rounded;
+    a1[label="AuthService\n(authentication, RBAC)"]; a2[label="LockoutService\n(lock state rules)"]; a3[label="AuditService\n(append-only log)"];
+    a4[label="ReportService"]; a5[label="NotificationService"]; a6[label="AdminService"]; }
+  subgraph cluster_d { label="Data Layer"; fontsize=13; style=rounded;
+    d1[label="Data Access\n(queries, transactions)"]; d2[label="Relational Database\n(users, equipment, locks,\naudit_entries, notifications)", shape=cylinder]; }
+  {rank=same; p1;p2;p3;p4;p5} {rank=same; a1;a2;a3;a4;a5;a6} {rank=same; d1;d2}
+  p3 -> a2 [label=" HTTPS / JSON", lhead=cluster_a, ltail=cluster_p];
+  a2 -> d1 [label=" method calls", lhead=cluster_d, ltail=cluster_a];
+  d1 -> d2 [label=" SQL"];
+  compound=true;
+}

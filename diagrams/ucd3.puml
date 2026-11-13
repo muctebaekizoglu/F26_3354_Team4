@@ -1,0 +1,22 @@
+@startuml
+!include common.iuml
+left to right direction
+title Use Case Diagram D3 - Monitoring & Compliance
+actor Worker
+actor Supervisor
+actor Admin
+rectangle "LOTO Management System" {
+  usecase "UC-4 View Status\nDashboard" as UC4
+  usecase "Show In-App Alert" as AL
+  usecase "UC-5 Generate\nCompliance Report" as UC5
+  usecase "Filter Audit History" as FH
+  usecase "Export Report (CSV)" as EX
+}
+Worker -- UC4
+Supervisor -- UC4
+Admin -- UC4
+Supervisor -- UC5
+AL ..> UC4 : <<extend>>
+UC5 ..> FH : <<include>>
+EX ..> UC5 : <<extend>>
+@enduml

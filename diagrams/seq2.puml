@@ -1,0 +1,37 @@
+@startuml
+!include common.iuml
+autonumber
+title UC-2 Apply Lock
+actor Worker
+boundary "Lock Screen" as UI
+control LockoutService
+control AuthService
+control AuditService
+control NotificationService
+database Database as DB
+Worker -> UI : select equipment, tap "Lock"
+activate UI
+UI -> LockoutService : applyLock(workerId, equipmentId)
+activate LockoutService
+LockoutService -> AuthService : authorize(worker, equipment, APPLY)
+AuthService -> DB : check role + equipment authorization
+DB --> AuthService : result
+AuthService --> LockoutService : allowed?
+alt not authorized
+  LockoutService -> AuditService : log(workerId, LOCK_DENIED, equipmentId)
+  AuditService -> DB : insert AuditEntry
+  LockoutService --> UI : 403 denied
+  UI --> Worker : "Not authorized for this equipment"
+else authorized
+  LockoutService -> DB : insert Lock(workerId, equipmentId, appliedAt)
+  LockoutService -> DB : set Equipment.status = LOCKED
+  LockoutService -> AuditService : log(workerId, LOCK_APPLIED, equipmentId)
+  AuditService -> DB : insert AuditEntry
+  LockoutService -> NotificationService : notifyStatusChange(equipment)
+  NotificationService -> DB : insert Notification(s)
+  LockoutService --> UI : Lock
+  UI --> Worker : show equipment as LOCKED
+end
+deactivate LockoutService
+deactivate UI
+@enduml

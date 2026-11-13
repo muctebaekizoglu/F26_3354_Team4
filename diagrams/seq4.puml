@@ -1,0 +1,29 @@
+@startuml
+!include common.iuml
+autonumber
+title UC-4 View Status Dashboard
+actor User
+boundary Dashboard as UI
+control LockoutService
+control NotificationService
+database Database as DB
+User -> UI : open dashboard
+activate UI
+UI -> LockoutService : getEquipmentStatuses()
+activate LockoutService
+LockoutService -> DB : select all equipment + active lock counts
+DB --> LockoutService : rows
+LockoutService --> UI : List<Equipment>
+UI --> User : status table + Locked vs Unlocked chart
+loop every 5 seconds while open
+  UI -> NotificationService : getUnread(userId)
+  NotificationService -> DB : select unread notifications
+  DB --> NotificationService : notifications
+  NotificationService --> UI : List<Notification>
+  opt new notifications  [extend: Show In-App Alert]
+    UI --> User : show banner + refresh status
+  end
+end
+deactivate LockoutService
+deactivate UI
+@enduml
