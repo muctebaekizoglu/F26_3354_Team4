@@ -1,0 +1,14 @@
+{
+  "name": "loto-unit-test",
+  "version": "1.0.0",
+  "description": "Unit test for LockoutService - LOTO Management System (SE3354 Team 4)",
+  "main": "src/lockoutService.js",
+  "scripts": {
+    "test": "jest --verbose",
+    "test:coverage": "jest --verbose --coverage"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "29.7.0"
+  }
+}
