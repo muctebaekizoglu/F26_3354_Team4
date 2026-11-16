@@ -1,6 +1,6 @@
 # Team 4 – LOTO
 
-Lockout/Tagout (LOTO) Management System – SE 3354 Software Engineering, Fall 2026.
+Lockout/Tagout (LOTO) Management System – SE 3354 Software Engineering, Fall 2026. 
 
 ## Repository contents
 
